@@ -8,12 +8,10 @@
       "source": "/(.*)",
       "headers": [
         {
-          "comment": "The gallery renders a live miniature of the game in an iframe, so framing must be allowed. Never add X-Frame-Options.",
           "key": "Content-Security-Policy",
           "value": "frame-ancestors *"
         },
         {
-          "comment": "The host fetches /game.manifest.json cross-origin.",
           "key": "Access-Control-Allow-Origin",
           "value": "*"
         },
