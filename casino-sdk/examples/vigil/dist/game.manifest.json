@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "gameId": "VigilGame",
+  "apiVersion": 1,
+  "defaultLocale": "en",
+  "locales": {
+    "en": {
+      "name": "VIGIL",
+      "description": "Six candles. One survivor. Pick your candle and watch every survivor's odds re-price live as each flame is snuffed out. 96% RTP, exact integer math on chain."
+    }
+  },
+  "presentation": {
+    "mode": "full-iframe",
+    "hostPanels": {
+      "openSession": false,
+      "history": false,
+      "status": false
+    }
+  },
+  "capabilities": {
+    "openSession": true,
+    "submitAction": false,
+    "forfeitExpiredSession": false,
+    "cancelStuckRandomness": false,
+    "resize": true
+  }
+}

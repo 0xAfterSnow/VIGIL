@@ -1,0 +1,7 @@
+packages:
+  - simulator
+  - local-verify-network
+  - slot-engine
+  - 'examples/*'
+allowBuilds:
+  esbuild: true

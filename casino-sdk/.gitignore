@@ -1,0 +1,5 @@
+local-verify-network/
+slot-engine/
+node_modules/
+package-lock.json
+.claude

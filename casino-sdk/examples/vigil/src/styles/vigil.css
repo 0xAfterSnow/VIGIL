@@ -1,0 +1,687 @@
+/* VIGIL — the vigil scene: six procedural candles, the snuff animation, the live
+ * re-pricing bars and the ORDER rail. Everything here is drawn with CSS: no image
+ * or audio files (PRD §5.4), so the whole game stays one small bundle. */
+
+:root {
+  --vg-flame: #ffb648;
+  --vg-flame-core: #fff4cd;
+  --vg-glow: rgba(255, 150, 46, 0.5);
+  --vg-wax-hi: #f0e5d2;
+  --vg-wax-lo: #8a7c67;
+  --vg-pick: var(--color-cta-magenta);
+  --vg-pick-glow: rgba(207, 104, 255, 0.5);
+  --vg-out: #6a6154;
+  --vg-board-h: clamp(250px, 38vh, 350px);
+  --vg-snuff-ms: 620ms;
+}
+
+/* === Room backdrop — the warm floor glow the candles cast, no image asset === */
+.ck-shell__backdrop {
+  background-image:
+    radial-gradient(58% 44% at 50% 94%, rgba(255, 150, 46, 0.11), transparent 72%),
+    radial-gradient(34% 26% at 50% 90%, rgba(255, 196, 96, 0.07), transparent 70%),
+    radial-gradient(120% 90% at 50% -10%, rgba(146, 56, 255, 0.05), transparent 62%);
+}
+.ck-shell__canvas {
+  background: radial-gradient(ellipse at 50% 78%, rgba(255, 150, 46, 0.05), transparent 62%);
+}
+
+/* === Ticket picks — the two candles' worth of choice (Heads/Tails recipe) === */
+.vg-pick {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+}
+.vg-pick__pill {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  height: 52px;
+  padding: 2px;
+  margin: 0;
+  background: #080808;
+  border: 0;
+  border-radius: 14px;
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.17));
+  cursor: pointer;
+  transition: opacity var(--duration-hover) ease;
+}
+.vg-pick__pill:not(.vg-pick__pill--active):hover:not(:disabled) .vg-pick__face {
+  background: linear-gradient(180deg, #2a2a2a 0%, #1d1d1d 100%);
+}
+.vg-pick__pill--active:hover:not(:disabled) .vg-pick__face {
+  background: linear-gradient(180deg, #3a3a3a 0%, #1d1d1d 100%);
+}
+.vg-pick__pill:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+.vg-pick__face {
+  position: relative;
+  display: inline-flex;
+  flex: 1 0 0;
+  min-height: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 14px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #1d1d1d 0%, #181818 100%);
+  box-shadow:
+    inset 0 5px 6.6px 0 rgba(255, 255, 255, 0.04),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
+  color: var(--color-ink);
+  font-family: var(--font-display-ui);
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: -0.03em;
+  line-height: 16px;
+  white-space: nowrap;
+  transition: background var(--duration-hover) ease;
+}
+.vg-pick__pill--active .vg-pick__face {
+  background: linear-gradient(180deg, #313131 0%, #181818 100%);
+  box-shadow:
+    inset 0 5px 6.6px 0 rgba(255, 255, 255, 0.04),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.3);
+}
+.vg-pick__pill:focus-visible {
+  outline: none;
+}
+.vg-pick__pill:focus-visible .vg-pick__face {
+  box-shadow:
+    inset 0 5px 6.6px 0 rgba(255, 255, 255, 0.04),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.3),
+    0 0 0 2px var(--color-cta-purple-glow);
+}
+.vg-pick__icon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+.vg-pick__row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+.vg-pick__label {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+}
+.vg-pick__odds {
+  font-size: 11px;
+  color: var(--color-ink-fade);
+  font-variant-numeric: tabular-nums;
+}
+
+/* === The vigil stage === */
+.vg-stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  /* Top clears the history rail; the bottom only needs the idle prompt's pill. */
+  padding: 52px 12px 14px;
+}
+
+.vg-board {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: clamp(4px, 1.1vw, 14px);
+  width: 100%;
+  height: var(--vg-board-h);
+}
+
+.vg-candle {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  flex: 0 1 112px;
+  min-width: 0;
+  height: 100%;
+  padding: 10px 6px 8px;
+  margin: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 18px;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    background var(--duration-hover) ease,
+    border-color var(--duration-hover) ease,
+    box-shadow var(--duration-hover) ease;
+}
+.vg-candle:disabled {
+  cursor: default;
+}
+.vg-candle:hover:not(:disabled):not(.is-pick) {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.07);
+}
+.vg-candle.is-pick {
+  background: linear-gradient(180deg, rgba(207, 104, 255, 0.1) 0%, rgba(207, 104, 255, 0.015) 100%);
+  border-color: rgba(207, 104, 255, 0.45);
+  box-shadow:
+    0 0 0 1px #000,
+    0 22px 44px -26px var(--vg-pick-glow);
+}
+.vg-candle.is-pick.is-out {
+  border-color: rgba(255, 56, 56, 0.45);
+  background: linear-gradient(180deg, rgba(255, 56, 56, 0.09) 0%, rgba(255, 56, 56, 0.015) 100%);
+  box-shadow: 0 0 0 1px #000;
+}
+.vg-candle.is-winner {
+  border-color: rgba(8, 212, 47, 0.5);
+  background: linear-gradient(180deg, rgba(8, 212, 47, 0.12) 0%, rgba(8, 212, 47, 0.02) 100%);
+  box-shadow:
+    0 0 0 1px #000,
+    0 22px 48px -24px rgba(8, 212, 47, 0.6);
+}
+
+/* Live multiplier, re-priced after every snuff. */
+.vg-candle__mult {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-style: italic;
+  font-size: clamp(15px, 1.5vw, 21px);
+  letter-spacing: -0.05em;
+  color: var(--vg-flame);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  transition: color 200ms ease;
+}
+.vg-candle.is-pick .vg-candle__mult {
+  color: var(--vg-pick);
+}
+.vg-candle.is-winner .vg-candle__mult {
+  color: var(--color-win);
+}
+.vg-candle.is-out .vg-candle__mult {
+  color: var(--color-ink-ghost);
+}
+
+/* Flame + wax, bottom-aligned so the candle heights encode the death weights. */
+.vg-candle__stack {
+  display: flex;
+  flex: 1 1 0;
+  min-height: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+}
+.vg-candle__scene {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+  height: 70px;
+}
+.vg-candle__glow {
+  position: absolute;
+  bottom: -12px;
+  left: 50%;
+  width: 88px;
+  height: 88px;
+  margin-left: -44px;
+  border-radius: 50%;
+  /* A halo, not a disc: the falloff has to reach zero well inside the element or the glow reads as
+   * a brown ball against the near-black room. */
+  background: radial-gradient(
+    circle,
+    rgba(255, 182, 82, 0.24) 0%,
+    rgba(255, 156, 54, 0.1) 32%,
+    rgba(255, 136, 32, 0.03) 54%,
+    rgba(255, 130, 30, 0) 72%
+  );
+  filter: blur(7px);
+  animation: vg-glow 2.6s ease-in-out infinite;
+  animation-delay: calc(var(--vg-i) * -0.43s);
+  pointer-events: none;
+}
+.vg-candle__flame {
+  position: relative;
+  width: 19px;
+  height: 29px;
+  border-radius: 50% 50% 22% 22% / 62% 62% 38% 38%;
+  background: radial-gradient(ellipse at 50% 76%, #fff8db 0%, #ffd166 34%, #ff8a1f 68%, rgba(255, 90, 0, 0.2) 100%);
+  transform-origin: 50% 100%;
+  animation: vg-flicker 1.9s ease-in-out infinite;
+  animation-delay: calc(var(--vg-i) * -0.31s);
+  will-change: transform;
+}
+.vg-candle__flame::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 3px;
+  width: 7px;
+  height: 11px;
+  border-radius: 50% 50% 30% 30%;
+  background: linear-gradient(180deg, #fffdf4 0%, #ffe6a8 70%, rgba(255, 214, 130, 0) 100%);
+  transform: translateX(-50%);
+}
+/* Slow-motion near-miss and the low-odds tension beat: the flame gets agitated. */
+.vg-candle.is-tension .vg-candle__flame {
+  animation-duration: 0.42s;
+}
+.vg-candle.is-slowmo .vg-candle__flame {
+  animation-duration: 0.9s;
+}
+.vg-candle.is-slowmo .vg-candle__glow {
+  animation-duration: 1.1s;
+  filter: blur(3px);
+}
+.vg-candle__wick {
+  width: 2px;
+  height: 5px;
+  background: #1c1712;
+  border-radius: 1px;
+}
+.vg-candle__smoke {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(220, 214, 205, 0.5) 0%, rgba(180, 175, 168, 0.14) 55%, transparent 72%);
+  filter: blur(3px);
+  opacity: 0;
+  pointer-events: none;
+}
+.vg-candle__wax {
+  width: calc(27px - var(--vg-i) * 2.2px);
+  height: calc(126px - var(--vg-i) * 15px);
+  border-radius: 5px 5px 3px 3px;
+  background: linear-gradient(
+    90deg,
+    var(--vg-wax-lo) 0%,
+    var(--vg-wax-hi) 32%,
+    #fffaf0 48%,
+    var(--vg-wax-hi) 66%,
+    var(--vg-wax-lo) 100%
+  );
+  box-shadow: 0 6px 18px -8px rgba(255, 180, 72, 0.55);
+  transition:
+    background 420ms ease,
+    box-shadow 420ms ease;
+}
+
+/* Bottom rail: candle number, live chance and its bar. */
+.vg-candle__chance {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+}
+.vg-candle__pct {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  font-family: var(--font-display-ui);
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: -0.04em;
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.vg-candle__pct b {
+  font-weight: 700;
+  color: var(--color-ink-fade);
+}
+.vg-candle__bar {
+  display: block;
+  width: 100%;
+  height: 4px;
+  border-radius: 3px;
+  background: #1c1c1c;
+  overflow: hidden;
+}
+.vg-candle__bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, rgba(255, 138, 31, 0.85), var(--vg-flame));
+  transition: width 420ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.vg-candle.is-pick .vg-candle__bar > span {
+  background: linear-gradient(90deg, var(--color-cta-purple), var(--vg-pick));
+}
+.vg-candle.is-out .vg-candle__bar > span {
+  background: var(--vg-out);
+}
+
+/* === The snuff: flame gutters out, glow dies, a wisp of smoke rises === */
+.vg-candle.is-out .vg-candle__flame {
+  animation: vg-snuff var(--vg-snuff-ms) cubic-bezier(0.45, 0, 0.7, 1) both;
+}
+.vg-candle.is-out .vg-candle__flame::after {
+  animation: vg-snuff-core var(--vg-snuff-ms) ease-in both;
+}
+.vg-candle.is-out .vg-candle__glow {
+  animation: vg-glow-out calc(var(--vg-snuff-ms) + 260ms) ease-out both;
+}
+.vg-candle.is-out .vg-candle__smoke {
+  animation: vg-smoke 2100ms ease-out 120ms both;
+}
+.vg-candle.is-out .vg-candle__wax {
+  background: linear-gradient(90deg, #322d26 0%, #57503f 34%, #6b6252 50%, #57503f 66%, #322d26 100%);
+  box-shadow: none;
+}
+.vg-candle.is-out .vg-candle__wick {
+  background: #15120e;
+}
+.vg-candle.is-out .vg-candle__stack {
+  opacity: 0.72;
+}
+
+@keyframes vg-flicker {
+  0%,
+  100% {
+    transform: scale(1, 1) rotate(0deg);
+  }
+  22% {
+    transform: scale(1.06, 0.95) rotate(-2.4deg);
+  }
+  44% {
+    transform: scale(0.94, 1.08) rotate(1.8deg);
+  }
+  63% {
+    transform: scale(1.03, 0.98) rotate(-1deg);
+  }
+  82% {
+    transform: scale(0.97, 1.04) rotate(2.2deg);
+  }
+}
+@keyframes vg-glow {
+  0%,
+  100% {
+    opacity: 0.78;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.07);
+  }
+}
+@keyframes vg-snuff {
+  0% {
+    transform: scale(1, 1) translateY(0);
+    opacity: 1;
+  }
+  18% {
+    transform: scale(1.3, 1.45) translateY(-3px);
+    opacity: 1;
+  }
+  46% {
+    transform: scale(0.62, 0.78) translateY(1px);
+    opacity: 0.86;
+  }
+  62% {
+    transform: scale(0.94, 1.1) translateY(-2px);
+    opacity: 0.7;
+  }
+  78% {
+    transform: scale(0.34, 0.5) translateY(2px);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(0.04, 0.12) translateY(4px);
+    opacity: 0;
+  }
+}
+@keyframes vg-snuff-core {
+  0% {
+    opacity: 1;
+  }
+  40% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes vg-glow-out {
+  0% {
+    opacity: 0.9;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.7);
+  }
+}
+@keyframes vg-smoke {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.5);
+  }
+  18% {
+    opacity: 0.55;
+  }
+  60% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-58px) scale(2.1);
+  }
+}
+
+/* === Stage chrome: prompt, status, skip === */
+.vg-prompt {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-ink-dim);
+  background: var(--color-recess);
+  border: 1px solid var(--color-ink-ghost);
+  padding: 6px 12px;
+  border-radius: 999px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.vg-status {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 99px;
+  background-color: #0f0f0f;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.04) 0.9px, transparent 1px);
+  background-size: 3.3px 3.3px;
+  border-top: 1px solid #080808;
+  box-shadow: 0 1px 0 #292929;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 16px;
+  letter-spacing: -0.48px;
+  color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: vg-status-pulse 1.2s ease-in-out infinite;
+}
+@keyframes vg-status-pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.vg-skip {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #2a2a2a;
+  color: rgba(255, 255, 255, 0.8);
+  font-family: var(--font-display-ui);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  cursor: pointer;
+  transition: background var(--duration-hover) ease;
+}
+.vg-skip:hover {
+  background: #353535;
+}
+
+/* === ORDER rail — the death order filling in, one chip per snuff === */
+.vg-order {
+  /* In flow below the board, so it can never land on the candle labels on a short canvas. */
+  position: static;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 16px;
+  pointer-events: none;
+}
+.vg-order__title {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-ink-fade);
+  margin-right: 2px;
+}
+.vg-order__chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #2a2a2a;
+  color: rgba(255, 255, 255, 0.8);
+  font-family: var(--font-display-ui);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.vg-order__chip--empty {
+  background: transparent;
+  border: 1px dashed var(--color-ink-ghost);
+  color: transparent;
+}
+.vg-order__chip--pick {
+  background: var(--vg-pick);
+  color: #14061f;
+  font-weight: 700;
+}
+.vg-order__chip--survivor {
+  background: var(--vg-flame);
+  color: #1a0f02;
+  font-weight: 700;
+  box-shadow: 0 0 16px -2px var(--vg-glow);
+}
+.vg-order__chip--dead {
+  background: #1b1b1b;
+  color: rgba(255, 255, 255, 0.42);
+}
+
+/* === Result overlay — the win recipe, plus its loss twin === */
+.ck-win-overlay__card--loss .ck-win-overlay__win {
+  color: var(--color-loss);
+}
+.ck-win-overlay__sub {
+  font-family: var(--font-display-ui);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-ink-fade);
+  text-align: center;
+}
+.ck-win-overlay__amount--loss {
+  color: var(--color-loss);
+}
+
+/* === Mobile === */
+@media (max-width: 767px) {
+  :root {
+    /* The canvas is short and `flex: 0 0 auto` on phones: the board has to leave room for the
+     * ORDER rail underneath it. */
+    --vg-board-h: clamp(150px, 26vh, 220px);
+  }
+  .vg-stage {
+    gap: 6px;
+    padding: 46px 4px 8px;
+  }
+  .vg-candle {
+    flex: 0 1 76px;
+    padding: 8px 3px 6px;
+  }
+  .vg-candle__glow {
+    width: 74px;
+    height: 74px;
+    margin-left: -37px;
+  }
+  .vg-candle__scene {
+    height: 52px;
+  }
+  .vg-candle__flame {
+    width: 14px;
+    height: 21px;
+  }
+  .vg-candle__wax {
+    width: calc(19px - var(--vg-i) * 1.4px);
+    height: calc(88px - var(--vg-i) * 9px);
+  }
+  .vg-candle__pct {
+    font-size: 11px;
+    gap: 3px;
+  }
+  .ck-canvas-history__pill {
+    padding: 6px 11px;
+    font-size: 13px;
+  }
+  .vg-order {
+    gap: 5px;
+    padding: 0 8px;
+  }
+  .vg-order__title {
+    font-size: 10px;
+  }
+  .vg-order__chip {
+    width: 27px;
+    height: 27px;
+    font-size: 13px;
+  }
+}

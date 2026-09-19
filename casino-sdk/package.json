@@ -1,0 +1,39 @@
+{
+  "name": "@chain/casino-sdk",
+  "version": "0.4.0",
+  "private": true,
+  "workspaces": [
+    "simulator",
+    "local-verify-network",
+    "slot-engine",
+    "examples/*"
+  ],
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./host": "./src/host.ts",
+    "./guest": "./src/guest.ts",
+    "./contracts/*": "./simulator/contracts/*",
+    "./scripts/*": "./scripts/*"
+  },
+  "scripts": {
+    "check": "vp check",
+    "check-types": "tsc --noEmit",
+    "start": "concurrently -k -n local-node,simulator,coinflip -c yellow,cyan,magenta \"tsx scripts/run-in.ts simulator local-node\" \"tsx scripts/run-in.ts simulator dev\" \"tsx scripts/run-in.ts examples/coinflip-public dev\"",
+    "start:slots": "tsx scripts/run-in.ts slot-engine start"
+  },
+  "dependencies": {
+    "penpal": "^7.0.4",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "24.12.4",
+    "concurrently": "^9.1.2",
+    "tsx": "^4.21.0",
+    "typescript": "7.0.2"
+  },
+  "engines": {
+    "bun": ">=1.4.0",
+    "node": ">=24.12.4"
+  }
+}
