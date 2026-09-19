@@ -1,0 +1,12 @@
+[build]
+  # Netlify: set the site's base directory to `casino-sdk/examples/vigil`, or run this from there.
+  command = "npm run build"
+  publish = "dist"
+
+# The gallery renders a live miniature of the game in an iframe, so framing must stay open.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "frame-ancestors *"
+    Access-Control-Allow-Origin = "*"
+    Referrer-Policy = "no-referrer-when-downgrade"

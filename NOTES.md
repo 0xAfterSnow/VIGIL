@@ -398,3 +398,62 @@ with. The fallback only ever runs when the blob is absent; the decoded on-chain 
 workspace resolve two workspaces named `vigil-game`, which breaks `npx tsc`/anything that reads the
 workspace from inside the repo. Not touched — it is not mine to delete — but the direct binary
 (`./node_modules/.bin/tsc`) is unaffected, and that is what the numbers above were produced with.
+
+## Phase 6 — standalone free play, and the hosting config the entry URL needs
+
+The rule is "your URL = your entry, and it must also run standalone: anyone opening it directly gets
+a playable demo". Until now the build was host-mode only — open it directly and the guest bridge
+handshake never resolves, so the page sat on "Connecting to host…". The live Vercel deploy was
+exactly that: `vigil-three-psi.vercel.app` served `index-D92IEYt6.js`, the Phase 5 UI with no demo
+mode, and no `frame-ancestors` header (framing still worked, because Vercel sets no
+`X-Frame-Options`, but the PRD asks for the header and it was missing).
+
+### 6.1 Free play is the default, host mode is the exception
+
+`detectMode()` in `src/App.tsx`:
+
+| Condition | Mode |
+|---|---|
+| opened top-level (`window.parent === window`) | **free play** |
+| framed | **host bridge** — the casino, or the local harness |
+| `?demo=1` / `?demo=0` | forced either way |
+| framed, handshake never resolves (4 s) | falls back to free play |
+
+`src/demo/useDemoHost.ts` stands in for the casino host: it keeps a demo-chip balance, answers
+`openSession` by drawing a word from `crypto.getRandomValues` and running **the same
+`sampleOrder()` the contract runs**, settles with **the same `payoutFor()` the contract pays with**,
+and pushes a real `HostSnapshotV1` — so the game has one code path and no idea which host it is
+talking to. The stake leaves the balance at open and the payout only lands on `revealOutcome`: the
+host's reveal gate, reproduced locally, so the demo cannot spoil its own result either.
+
+Demo house limits mirror the real ones' shape (100 chips a bet, 250 chips of reserved profit), the
+word is drawn 900 ms after the bet so the "burning" beat exists, and the balance starts at 1,000
+with a **Refill** chip under 10. It is labelled on screen, not in a comment: `FREE PLAY · DEMO
+CHIPS` / `VIGIL · NO REAL MONEY` in the bottom bar (amber dot, not the green "provably fair" one)
+and `Demo balance:` in the sidebar. The client's sampler is exact, but `getRandomValues` is not a
+VRF — the demo is not provably fair and does not claim to be.
+
+### 6.2 What was observed (headless Chrome, both modes, real rounds)
+
+```
+standalone  localhost:3200 + the production build on :3201
+            "FREE PLAY · DEMO CHIPS | chain.wtf | VIGIL · NO REAL MONEY"
+            "Demo balance: C 1,000.00"   no loading screen   6 candles
+            100-chip bet → OUT | −100 | ORDER 5-6-2-4-1-3 | CANDLE 1 · THE 5TH OUT → 900.00
+            100-chip bet → WIN | 1.82x | + 81.7342 | ORDER 5-2-4-6-3-1 → 981.73
+            (debit at open, credit only after the reveal — the same order the host enforces)
+refill      with the threshold temporarily raised to 2,000 (verification only, reverted):
+            chip appears → click → 1,000.00 becomes 2,000.00 → chip disappears
+host        harness :3300 → iframe :3200  "PROVABLY FAIR | chain.wtf | VIGIL · 96% RTP"
+            real balance 2,633,258.24 → OUT | −1 | ORDER 5-4-3-1-2-6 | CANDLE 4 · THE 2ND OUT
+            → 2,633,257.24   (unchanged behaviour: the mode split did not touch the bridge)
+```
+
+### 6.3 Hosting config
+
+`vercel.json`, `netlify.toml` and `public/_headers` (which vite copies into `dist/`, so Netlify and
+Cloudflare Pages pick it up) all set the three headers that matter: `frame-ancestors *`,
+`Access-Control-Allow-Origin: *` for the cross-origin manifest fetch, and never `X-Frame-Options`.
+Nothing is deployed from here — a deploy publishes to the entry URL, which is the owner's call.
+`README.md` (PRD §5.1) now exists with the run/deploy instructions, the paytable, the sampler and
+the RTP invariants, verified against `src/game/payout.ts` rather than copied from the PRD.

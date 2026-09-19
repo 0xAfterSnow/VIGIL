@@ -26,6 +26,12 @@
   background: radial-gradient(ellipse at 50% 78%, rgba(255, 150, 46, 0.05), transparent 62%);
 }
 
+/* === Demo (free play) affordances === */
+.ck-fairness-dot--demo {
+  background: var(--vg-flame);
+  box-shadow: 0 0 4px var(--vg-flame);
+}
+
 /* === Ticket picks — the two candles' worth of choice (Heads/Tails recipe) === */
 .vg-pick {
   display: grid;

@@ -5,6 +5,7 @@ import type { CSSProperties } from 'react';
 import { SessionPhase, computeMaxWager } from '@chain/casino-sdk/guest';
 
 import { useCasinoHost } from './useCasinoHost';
+import { useDemoHost } from './demo/useDemoHost';
 import { BottomBar } from './components/BottomBar';
 import { CandleStage, type StagePhase } from './components/CandleStage';
 import { HistoryStrip } from './components/HistoryStrip';
@@ -35,6 +36,29 @@ type Round = {
 
 const TURBO_STORAGE_KEY = 'vigil.turbo';
 
+/**
+ * How the game is being hosted. `host` is the chain.wtf casino (or the local harness) driving the
+ * real chain through the guest bridge; `demo` is free play — the same game, the same sampler, the
+ * same paytable, with demo chips and locally drawn randomness.
+ */
+type GameMode = 'host' | 'demo';
+
+/** A framed game that never completes the guest handshake is not a casino host — free play instead. */
+const HOST_HANDSHAKE_TIMEOUT_MS = 4000;
+
+/**
+ * Standalone is the default: opened directly (no parent frame) VIGIL is a playable demo, which is
+ * what anyone following the entry URL gets. `?demo=1` forces free play and `?demo=0` forces the
+ * host bridge, for testing either side on purpose.
+ */
+function detectMode(): GameMode {
+  if (typeof window === 'undefined') return 'demo';
+  const forced = new URLSearchParams(window.location.search).get('demo');
+  if (forced === '1') return 'demo';
+  if (forced === '0') return 'host';
+  return window.parent === window ? 'demo' : 'host';
+}
+
 function loadTurbo(): boolean {
   try {
     return window.localStorage.getItem(TURBO_STORAGE_KEY) === '1';
@@ -63,7 +87,21 @@ function formatAmount(value: bigint, decimals: number): string {
 }
 
 export function App() {
-  const { hostApi, snapshot } = useCasinoHost();
+  const host = useCasinoHost();
+  const demo = useDemoHost();
+  const [mode, setMode] = useState<GameMode>(detectMode);
+
+  // The host bridge is only abandoned if it never answers: a real casino host resolves its
+  // handshake immediately, and the frames that don't are someone else's embed.
+  useEffect(() => {
+    if (mode !== 'host' || host.hostApi) return;
+    const timer = window.setTimeout(() => setMode('demo'), HOST_HANDSHAKE_TIMEOUT_MS);
+    return () => window.clearTimeout(timer);
+  }, [mode, host.hostApi]);
+
+  const demoMode = mode === 'demo';
+  const hostApi = demoMode ? demo.hostApi : host.hostApi;
+  const snapshot = demoMode ? demo.snapshot : host.snapshot;
 
   const [ticket, setTicket] = useState<TicketId>(LAST_LIT);
   // No candle is lit until the player lights one: the board opens with all six burning.
@@ -406,6 +444,9 @@ export function App() {
             reason={reason}
             onBet={handleBet}
             locked={roundInFlight}
+            demo={demoMode}
+            canRefill={demoMode && demo.low}
+            onRefill={demo.refill}
           />
         </div>
         <div className="ck-shell__canvas">
@@ -457,7 +498,7 @@ export function App() {
           />
         </div>
       </div>
-      <BottomBar />
+      <BottomBar demo={demoMode} />
     </div>
   );
 }

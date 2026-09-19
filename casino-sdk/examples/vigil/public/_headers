@@ -1,0 +1,9 @@
+# Netlify and Cloudflare Pages read this file from the publish directory (vite copies
+# `public/` into `dist/`). Vercel uses vercel.json for the same two headers.
+#
+# The gallery shows a live miniature of the game inside its cartridge, so the game must be
+# frameable: `frame-ancestors *` and NO X-Frame-Options.
+/*
+  Content-Security-Policy: frame-ancestors *
+  Access-Control-Allow-Origin: *
+  Referrer-Policy: no-referrer-when-downgrade

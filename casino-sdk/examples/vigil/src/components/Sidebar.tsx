@@ -3,6 +3,7 @@ import { formatUnits } from 'viem';
 
 import { FINAL_THREE, LAST_LIT, TICKETS, type TicketId } from '../game/constants';
 import { multiplierLabel } from '../game/payout';
+import { DEMO_START_CHIPS } from '../demo/useDemoHost';
 import { BetAmountInput, CtaButton, TokenIcon } from './ui/controls';
 import { CandlesIcon, FlameIcon, RocketIcon } from './ui/icons';
 import { ToggleSwitch } from './ui/ToggleSwitch';
@@ -28,6 +29,11 @@ export type SidebarProps = {
   onBet: () => void;
   /** True while a round is in flight: the ticket and the wager are frozen. */
   locked: boolean;
+  /** Free play: demo chips, locally drawn randomness, no real money. */
+  demo: boolean;
+  /** Free play only: offer the refill chip when the balance runs low. */
+  canRefill: boolean;
+  onRefill: () => void;
 };
 
 const TICKET_ICONS: Record<number, typeof FlameIcon> = {
@@ -53,6 +59,9 @@ export function Sidebar({
   reason,
   onBet,
   locked,
+  demo,
+  canRefill,
+  onRefill,
 }: SidebarProps) {
   const formattedBalance = useMemo(() => {
     if (balance === undefined) return null;
@@ -150,12 +159,17 @@ export function Sidebar({
       <div className="ck-sidebar__foot ck-sidebar__foot--cta">
         {formattedBalance !== null && (
           <div className="ck-sidebar__balance">
-            <span className="ck-sidebar__balance-label">Balance:</span>
+            <span className="ck-sidebar__balance-label">{demo ? 'Demo balance:' : 'Balance:'}</span>
             <span className="ck-sidebar__balance-value">
               <TokenIcon symbol={symbol} iconUrl={tokenIconUrl} size={18} />
               <span className="ck-sidebar__balance-amount">{formattedBalance}</span>
             </span>
           </div>
+        )}
+        {canRefill && (
+          <button type="button" className="ck-chip" disabled={locked} onClick={onRefill}>
+            Refill {formatUnits(DEMO_START_CHIPS, decimals)} demo chips
+          </button>
         )}
         <CtaButton disabled={ctaDisabled} onClick={onBet}>
           {ctaLabel}
