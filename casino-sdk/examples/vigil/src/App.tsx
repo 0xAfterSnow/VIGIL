@@ -34,8 +34,6 @@ type Round = {
   payout?: bigint;
 };
 
-const TURBO_STORAGE_KEY = 'vigil.turbo';
-
 /**
  * How the game is being hosted. `host` is the chain.wtf casino (or the local harness) driving the
  * real chain through the guest bridge; `demo` is free play — the same game, the same sampler, the
@@ -59,13 +57,6 @@ function detectMode(): GameMode {
   return window.parent === window ? 'demo' : 'host';
 }
 
-function loadTurbo(): boolean {
-  try {
-    return window.localStorage.getItem(TURBO_STORAGE_KEY) === '1';
-  } catch {
-    return false;
-  }
-}
 
 function walletStatusMessage(status: string): string {
   return status === 'disconnected'
@@ -110,16 +101,7 @@ export function App() {
   const [round, setRound] = useState<Round | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [resultDismissed, setResultDismissed] = useState(false);
-  const [turbo, setTurboState] = useState(loadTurbo);
 
-  const setTurbo = useCallback((next: boolean) => {
-    setTurboState(next);
-    try {
-      window.localStorage.setItem(TURBO_STORAGE_KEY, next ? '1' : '0');
-    } catch {
-      // Storage can be unavailable in sandboxed iframes.
-    }
-  }, []);
 
   const decimals = snapshot?.token.decimals ?? 18;
   const symbol = snapshot?.token.symbol ?? '';
@@ -131,8 +113,6 @@ export function App() {
 
   const hostApiRef = useRef(hostApi);
   hostApiRef.current = hostApi;
-  const turboRef = useRef(turbo);
-  turboRef.current = turbo;
   const roundRef = useRef(round);
   roundRef.current = round;
   /** Live reveal timers, so SKIP can retire them. */
@@ -200,7 +180,7 @@ export function App() {
   useEffect(() => {
     if (!revealKey || revealStatus !== 'revealing' || !revealOrder || !roundRef.current) return;
     const { bet, sessionId } = roundRef.current;
-    const timeline = buildTimeline(revealOrder, bet.candle, bet.ticket, { turbo: turboRef.current });
+    const timeline = buildTimeline(revealOrder, bet.candle, bet.ticket);
     const key = revealKey;
 
     const timers: number[] = [];
@@ -336,7 +316,7 @@ export function App() {
     setResultDismissed(true);
   }, []);
 
-  // Keyboard: 1-6 light a candle, T turbo, L/F the ticket, Enter bets. PRD §4.5.
+  // Keyboard: 1-6 light a candle, , L/F the ticket, Enter bets. PRD §4.5.
   const canBetRef = useRef(canBet);
   canBetRef.current = canBet;
   useEffect(() => {
@@ -346,10 +326,6 @@ export function App() {
       if (target && ['INPUT', 'TEXTAREA', 'BUTTON'].includes(target.tagName)) return;
       if (event.key >= '1' && event.key <= '6') {
         handlePick(Number(event.key) - 1);
-        return;
-      }
-      if (event.key === 't' || event.key === 'T') {
-        setTurbo(!turboRef.current);
         return;
       }
       if (event.key === 'l' || event.key === 'L') {
@@ -367,7 +343,7 @@ export function App() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [handleBet, handlePick, setTurbo]);
+  }, [handleBet, handlePick]);
 
   if (!hostApi || !snapshot) {
     return (
@@ -437,8 +413,6 @@ export function App() {
             decimals={decimals}
             symbol={symbol}
             tokenIconUrl={tokenIconUrl}
-            turbo={turbo}
-            setTurbo={setTurbo}
             ctaLabel={ctaLabel}
             ctaDisabled={!canBet}
             reason={reason}

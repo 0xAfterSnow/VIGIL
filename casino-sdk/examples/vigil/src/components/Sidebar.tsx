@@ -5,8 +5,7 @@ import { FINAL_THREE, LAST_LIT, TICKETS, type TicketId } from '../game/constants
 import { multiplierLabel } from '../game/payout';
 import { DEMO_START_CHIPS } from '../demo/useDemoHost';
 import { BetAmountInput, CtaButton, TokenIcon } from './ui/controls';
-import { CandlesIcon, FlameIcon, RocketIcon } from './ui/icons';
-import { ToggleSwitch } from './ui/ToggleSwitch';
+import { CandlesIcon, FlameIcon } from './ui/icons';
 
 export type SidebarProps = {
   ticket: TicketId;
@@ -21,8 +20,6 @@ export type SidebarProps = {
   decimals: number;
   symbol: string;
   tokenIconUrl?: string;
-  turbo: boolean;
-  setTurbo: (value: boolean) => void;
   ctaLabel: string;
   ctaDisabled: boolean;
   reason: string | null;
@@ -52,8 +49,6 @@ export function Sidebar({
   decimals,
   symbol,
   tokenIconUrl,
-  turbo,
-  setTurbo,
   ctaLabel,
   ctaDisabled,
   reason,
@@ -143,16 +138,6 @@ export function Sidebar({
               Max
             </button>
           </div>
-        </div>
-      </div>
-
-      <div className="ck-sidebar__foot ck-sidebar__foot--fastmode">
-        <div className="ck-sidebar__fastmode">
-          <span className="ck-sidebar__fastmode-label">
-            <RocketIcon />
-            Turbo
-          </span>
-          <ToggleSwitch checked={turbo} onChange={setTurbo} aria-label="Turbo" />
         </div>
       </div>
 
