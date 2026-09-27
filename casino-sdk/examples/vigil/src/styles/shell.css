@@ -381,6 +381,29 @@ html {
   box-shadow: 0 0 4px var(--color-led-green);
 }
 
+/* "How to play" — the always-available route back to the rules, sat inside the fairness note. */
+.ck-bottombar__help {
+  margin-left: 4px;
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: transparent;
+  font: inherit;
+  color: var(--color-ink-dim);
+  cursor: pointer;
+  transition:
+    background var(--duration-hover) ease,
+    color var(--duration-hover) ease;
+}
+.ck-bottombar__help:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-ink);
+}
+.ck-bottombar__help:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-cta-purple-glow);
+}
+
 /* === Win celebration overlay === */
 .ck-win-overlay {
   position: absolute;
@@ -470,6 +493,31 @@ html {
   text-align: center;
   text-transform: uppercase;
   color: var(--color-ink-fade);
+}
+/* "Play again" on the settled card. The overlay is pointer-events: none so a click anywhere
+   dismisses — this opts back in, so the button's own click still lands. */
+.ck-win-overlay__again {
+  margin-top: 16px;
+  padding: 7px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: #2a2a2a;
+  pointer-events: auto;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+  cursor: pointer;
+  transition: background var(--duration-hover) ease;
+}
+.ck-win-overlay__again:hover {
+  background: #353535;
+}
+.ck-win-overlay__again:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-cta-purple-glow);
 }
 @media (prefers-reduced-motion: reduce) {
   .ck-win-overlay__card {

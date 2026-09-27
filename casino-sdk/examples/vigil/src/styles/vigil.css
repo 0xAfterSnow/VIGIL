@@ -565,6 +565,50 @@
   background: #353535;
 }
 
+/* "Play again" — shown once the vigil settles. In flow after the ORDER rail in the centered
+   stage column, so it is laid out rather than pinned over the chips. */
+.vg-again {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+.vg-again__btn {
+  padding: 8px 22px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: #2a2a2a;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+  cursor: pointer;
+  transition:
+    background var(--duration-hover) ease,
+    border-color var(--duration-hover) ease;
+}
+.vg-again__btn:hover {
+  background: #353535;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+.vg-again__btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-cta-purple-glow);
+}
+.vg-again__hint {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-ink-fade);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 /* === ORDER rail — the death order filling in, one chip per snuff === */
 .vg-order {
   /* In flow below the board, so it can never land on the candle labels on a short canvas. */
@@ -639,6 +683,225 @@
   color: var(--color-loss);
 }
 
+/* === How to play — the rules dialog === */
+.vg-help {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.72);
+  animation: vg-help-fade 0.18s ease-out both;
+}
+@keyframes vg-help-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.vg-help__card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: min(520px, 100%);
+  max-height: min(680px, calc(100vh - 40px));
+  overflow-y: auto;
+  padding: 26px 26px 22px;
+  background: var(--surface-elevated);
+  border-radius: var(--radius-card-lg);
+  box-shadow:
+    var(--shadow-card-outer),
+    var(--shadow-card-inner),
+    0 24px 60px rgba(0, 0, 0, 0.6);
+  animation: vg-help-pop 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+@keyframes vg-help-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vg-help,
+  .vg-help__card {
+    animation: none;
+  }
+}
+.vg-help__head {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.vg-help__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-style: italic;
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: -0.06em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+}
+.vg-help__lede {
+  margin: 0;
+  font-family: var(--font-display-ui);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.45;
+  color: var(--color-ink-fade);
+}
+.vg-help__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.vg-help__step {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.vg-help__num {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--color-recess);
+  border: 1px solid var(--color-ink-ghost);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-ink-dim);
+}
+.vg-help__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.vg-help__step-title {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+}
+.vg-help__step-body {
+  font-family: var(--font-display-ui);
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.5;
+  color: var(--color-ink-fade);
+}
+.vg-help__step-body b {
+  font-weight: 600;
+  color: var(--color-ink);
+}
+.vg-help kbd {
+  display: inline-block;
+  min-width: 18px;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--color-recess);
+  border: 1px solid var(--color-ink-ghost);
+  border-bottom-width: 2px;
+  font-family: var(--font-display-ui);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--color-ink-dim);
+}
+.vg-help__keys {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--color-recess);
+}
+.vg-help__keys-label {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-ink-fade);
+}
+.vg-help__key {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-display-ui);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--color-ink-fade);
+}
+.vg-help__foot {
+  position: sticky;
+  bottom: -22px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: auto;
+  padding-top: 12px;
+  background: var(--surface-elevated);
+  box-shadow: 0 -12px 16px -8px var(--surface-elevated);
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+.vg-help__rtp {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-ink-fade);
+}
+.vg-help__close {
+  padding: 9px 26px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--color-cta-magenta), var(--color-cta-purple));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #14061f;
+  cursor: pointer;
+  transition: filter var(--duration-hover) ease;
+}
+.vg-help__close:hover {
+  filter: brightness(1.08);
+}
+.vg-help__close:focus-visible {
+  outline: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 0 0 3px var(--color-cta-purple-glow);
+}
+
 /* === Mobile === */
 @media (max-width: 767px) {
   :root {
@@ -681,6 +944,31 @@
   .vg-order {
     gap: 5px;
     padding: 0 8px;
+  }
+  .vg-help {
+    padding: 12px;
+    align-items: flex-end;
+  }
+  .vg-help__card {
+    max-height: calc(100vh - 24px);
+    padding: 20px 18px 18px;
+    gap: 14px;
+  }
+  .vg-help__title {
+    font-size: 26px;
+  }
+  .vg-help__step-body,
+  .vg-help__lede {
+    font-size: 13px;
+  }
+  .vg-help__foot {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    text-align: center;
+    gap: 10px;
+  }
+  .vg-help__close {
+    width: 100%;
   }
   .vg-order__title {
     font-size: 10px;

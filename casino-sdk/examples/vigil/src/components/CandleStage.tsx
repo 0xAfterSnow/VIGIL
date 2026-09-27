@@ -21,6 +21,8 @@ export type CandleStageProps = {
   interactive: boolean;
   onPick: (candle: number) => void;
   onSkip: () => void;
+  /** Settled rounds only: relight every candle and return the board to the idle prompt. */
+  onPlayAgain: () => void;
 };
 
 /**
@@ -40,6 +42,7 @@ export function CandleStage({
   interactive,
   onPick,
   onSkip,
+  onPlayAgain,
 }: CandleStageProps) {
   const shown = order ? order.slice(0, revealed) : [];
   const dead = new Set(shown);
@@ -140,6 +143,20 @@ export function CandleStage({
               </span>
             );
           })}
+        </div>
+      )}
+
+      {/* The board is spent once the vigil ends: relight it here rather than leaving the player to
+          guess that the sidebar CTA (or a fresh candle) starts the next round. In flow after the
+          ORDER rail, so it can never sit on top of it. */}
+      {phase === 'settled' && (
+        <div className="vg-again">
+          <button type="button" className="vg-again__btn" onClick={onPlayAgain}>
+            Play again
+          </button>
+          <span className="vg-again__hint">
+            {pick === null ? 'Relight the candles' : `Keep candle ${pick + 1} · light them up again`}
+          </span>
         </div>
       )}
     </div>

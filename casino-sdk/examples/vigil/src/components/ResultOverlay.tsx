@@ -17,6 +17,7 @@ export function ResultOverlay({
   symbol,
   tokenIconUrl,
   onDismiss,
+  onPlayAgain,
 }: {
   visible: boolean;
   won: boolean;
@@ -29,6 +30,8 @@ export function ResultOverlay({
   symbol: string;
   tokenIconUrl?: string;
   onDismiss: () => void;
+  /** Relight the board straight from the result card; the dismissal still runs alongside it. */
+  onPlayAgain: () => void;
 }) {
   useEffect(() => {
     if (!visible) return;
@@ -54,6 +57,18 @@ export function ResultOverlay({
           </div>
           <span className="ck-win-overlay__label">{won ? `${orderText} · ${fateText}` : fateText}</span>
         </div>
+        {/* The wrapper is pointer-events: none so a click anywhere dismisses; this button opts back
+            in, letting a player relight the candles without hunting for a control elsewhere. */}
+        <button
+          type="button"
+          className="ck-win-overlay__again"
+          onClick={() => {
+            onPlayAgain();
+            onDismiss();
+          }}
+        >
+          Play again
+        </button>
       </div>
     </div>
   );

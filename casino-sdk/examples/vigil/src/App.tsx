@@ -9,6 +9,7 @@ import { useDemoHost } from './demo/useDemoHost';
 import { BottomBar } from './components/BottomBar';
 import { CandleStage, type StagePhase } from './components/CandleStage';
 import { HistoryStrip } from './components/HistoryStrip';
+import { HowToPlay } from './components/HowToPlay';
 import { ResultOverlay } from './components/ResultOverlay';
 import { Sidebar } from './components/Sidebar';
 import { StatsStrip } from './components/StatsStrip';
@@ -77,6 +78,25 @@ function formatAmount(value: bigint, decimals: number): string {
   }
 }
 
+const HELP_SEEN_STORAGE_KEY = 'vigil:help-seen';
+
+/** First visit ever? Storage can be unavailable in sandboxed iframes, so treat that as "seen". */
+function hasSeenHelp(): boolean {
+  try {
+    return window.localStorage.getItem(HELP_SEEN_STORAGE_KEY) === '1';
+  } catch {
+    return true;
+  }
+}
+
+function markHelpSeen(): void {
+  try {
+    window.localStorage.setItem(HELP_SEEN_STORAGE_KEY, '1');
+  } catch {
+    // Storage can be unavailable in sandboxed iframes.
+  }
+}
+
 export function App() {
   const host = useCasinoHost();
   const demo = useDemoHost();
@@ -101,6 +121,8 @@ export function App() {
   const [round, setRound] = useState<Round | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [resultDismissed, setResultDismissed] = useState(false);
+  // The rules dialog: shown once on a player's first visit, reopenable from the bottom bar.
+  const [helpOpen, setHelpOpen] = useState(() => !hasSeenHelp());
 
 
   const decimals = snapshot?.token.decimals ?? 18;
@@ -231,6 +253,25 @@ export function App() {
     }
   }, [clearTimers]);
 
+  const closeHelp = useCallback(() => {
+    setHelpOpen(false);
+    markHelpSeen();
+  }, []);
+
+  /**
+   * End-of-round reset: drop the settled round so every candle relights and the idle prompt comes
+   * back. The pick, the ticket and the wager are deliberately kept — the player is one press of the
+   * CTA away from the next vigil. Nothing on-chain changes; settlement is already final.
+   */
+  const playAgain = useCallback(() => {
+    const current = roundRef.current;
+    if (!current || current.status !== 'done') return;
+    clearTimers();
+    setRound(null);
+    setResultDismissed(true);
+    setError(null);
+  }, [clearTimers]);
+
   const openRound = useCallback(
     async (bet: VigilBet, wager: bigint) => {
       if (!hostApi) return;
@@ -319,9 +360,13 @@ export function App() {
   // Keyboard: 1-6 light a candle, , L/F the ticket, Enter bets. PRD §4.5.
   const canBetRef = useRef(canBet);
   canBetRef.current = canBet;
+  const helpOpenRef = useRef(helpOpen);
+  helpOpenRef.current = helpOpen;
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
+      // The rules dialog owns the keyboard while it is open (Esc closes it there).
+      if (helpOpenRef.current) return;
       const target = event.target as HTMLElement | null;
       if (target && ['INPUT', 'TEXTAREA', 'BUTTON'].includes(target.tagName)) return;
       if (event.key >= '1' && event.key <= '6') {
@@ -440,6 +485,7 @@ export function App() {
             interactive={!roundInFlight}
             onPick={handlePick}
             onSkip={skipReveal}
+            onPlayAgain={playAgain}
           />
           <StatsStrip
             ticket={ticket}
@@ -469,10 +515,12 @@ export function App() {
             symbol={symbol}
             tokenIconUrl={tokenIconUrl}
             onDismiss={() => setResultDismissed(true)}
+            onPlayAgain={playAgain}
           />
         </div>
       </div>
-      <BottomBar demo={demoMode} />
+      <BottomBar demo={demoMode} onHowToPlay={() => setHelpOpen(true)} />
+      <HowToPlay open={helpOpen} demo={demoMode} onClose={closeHelp} />
     </div>
   );
 }
